@@ -3,22 +3,28 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require("cors");
 
-const { graphqlHTTP } = require("express-graphql");
-const graphql_schema = require("./src/api/graphql/schema");
+// Utilities
+const { connectAtlas } = require("./src/utilities/database");
+const { validate } = require('./src/utilities/token')
+
+// REST API Routes
+const imageRouter = require('./src/api/routes/image.routes')
+const userRouter = require('./src/api/routes/user.routes')
 
 const app = express();
 const port = 5000;
 
 // Setup middleware
-app.use(cors())
 app.options('*', cors())
+app.use(cors())
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(validate)
 
-// Setup GraphQL
-app.use('/api', graphqlHTTP((req, res) => ({
-    schema: graphql_schema,
-    graphiql: true
-})))
+app.use('/api/image', imageRouter);
+app.use('/api/user', userRouter);
+
+connectAtlas();
 
 app.listen(port, () => {
     console.log("The server is running on port", port);

@@ -1,21 +1,134 @@
-const storage = require('../../utilities/storage')
-const keys = require('../../../config/keys')
+const Image = require("../models/image.model");
+const { deleteImage } = require("../../utilities/cloudStorage")
 
 module.exports = {
+
     /*
-        @desc    Upload image
-        @param   args: {filename}
-        @return  status of upload
+        @desc    Create and upload image
+        @param   args: {upload, title, description*, tags*, public*}  *optional
+        @return  new mongoDB image instance
     */
-    upload: async(args) => {
-        const {filename} = args;
+    create: async(req, res) => {
+        const { title, description, tags, public } = req.body;
+        const { userID, cloudURL } = req;
+
+        let image = new Image({
+            userID,
+            cloudURL,
+            title,
+            tags,
+            description,
+            public            
+        });
+
+        await image.save();
+
+        return res.status(200).send({
+            message: "File uploaded.",
+            image
+        })
+    },
+    
+    /*
+        @desc    Get images based on query params
+        @param   args: {title*, tags*, private*}
+        @return  mongoDB image instances
+    */
+    get: async(req, res) => {
+        const { title, tags, myImages } = req.body;
+
+        let options = {
+            public: true
+        }
+
+        if(title) {
+            options.title = {
+                "$regex": title,
+                "$options": "i"
+            }
+        }
+
+        if(tags) {
+            options.tags = {
+                "$all": tags
+            }
+        }
+        
+        if(myImages) {
+            delete options.public
+            options.userID = req.userID
+        }
+
+        let results = await Image.find(options);
+        return res.status(200).send({results})
+    },
+
+
+    /*
+        @desc    Edit image w/ imageID
+        @param   args: {imageID, title*, tags*, public*}
+        @return  updated mongoDB image instances
+    */
+    edit: async(req, res) => {
+        const { imageID, title, tags, public } = req.body;
+
+        let image;
 
         try {
-            await storage.bucket(keys.bucketName).upload(filename, {gzip: true,});
-            return `Succesfully uploaded ${filename}`;
+            image = await Image.findById(imageID);
         } catch(error) {
-            console.log(error.message)
-            throw Error("Unable to upload file.");
+            return res.status(400).send({
+                message: "Invalid imageID"
+            })
         }
+        
+        if(image.userID != req.userID) {
+            return res.status(400).send({
+                message: "Sorry, you do not have access."
+            })
+        }
+
+        if(title) image.title = title;
+        if(tags) image.tags = tags;
+        if(public) image.public = public;
+
+        await image.save()
+
+        return res.status(200).send({
+            message: "Succesfully updated image.",
+            image
+        })
     },
+
+    /*
+        @desc    Remove image w/ imageID
+        @param   args: {imageID}
+        @return  deletion status
+    */
+    remove: async(req, res) => {
+        const { imageID } = req.body;
+
+        let image;
+
+        try {
+            image = await Image.findById(imageID);
+        } catch(error) {
+            return res.status(400).send({
+                message: "Invalid imageID"
+            });
+        }
+
+        if(image.userID != req.userID) {
+            return res.status(400).send({
+                message: "Sorry, you do not have access."
+            });
+        }
+
+        await Image.findByIdAndDelete(imageID);
+        deleteImage(image.cloudURL);
+
+        return res.status(200).send({
+            message: "Succesfully deleted image."
+        })
+    }
 }
