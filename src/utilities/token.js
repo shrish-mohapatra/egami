@@ -1,6 +1,6 @@
 const keys = require("../../config/keys");
 const jwt = require("jsonwebtoken");
-const BYPASS_ROUTES = ['login', 'signup']
+const BYPASS_ROUTES = ['login', 'signup', 'image/get']
 
 /*
     @desc    Create JWT with userID serialized
@@ -48,6 +48,8 @@ const validate = (req, res, next) => {
 */
 const requires_auth = (req) => {
     const query = req.url.toString();
+
+    if(!query.includes('api')) return false;
 
     for(route in BYPASS_ROUTES) {
         if(query.includes(BYPASS_ROUTES[route])) return false;

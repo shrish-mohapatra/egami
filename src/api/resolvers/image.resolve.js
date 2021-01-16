@@ -1,4 +1,5 @@
 const Image = require("../models/image.model");
+const User = require("../models/user.model");
 const { deleteImage } = require("../../utilities/cloudStorage")
 
 module.exports = {
@@ -59,7 +60,17 @@ module.exports = {
             options.userID = req.userID
         }
 
-        let results = await Image.find(options);
+        let query = await Image.find(options);
+        let results = []
+
+        for(let i=0; i<query.length; i++) {
+            let user = await User.findById(query[i].userID)
+            results.push({
+                ...query[i]._doc,
+                author: user.name
+            })
+        }
+
         return res.status(200).send({results})
     },
 

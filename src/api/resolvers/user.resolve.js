@@ -42,7 +42,7 @@ module.exports = {
 
         return res.status(200).send({
             token: token.createToken(user.id),
-            userID: user.id,
+            user,
             message: `Succesfully logged in as ${user.email}.`
         })
     },
@@ -77,7 +77,7 @@ module.exports = {
 
         return res.status(200).send({
             token: token.createToken(user.id),
-            userID: user.id,
+            user,
             message: `Succesfully registered as ${user.email}.`
         })
     },

@@ -6,9 +6,9 @@ const tempStorage = require('../../utilities/tempStorage')
 
 const router = express.Router()
 
-router.get('/', get)
-router.post('/', tempStorage.single('upload'), uploadImage, create)
-router.put('/', edit)
-router.delete('/', remove)
+router.get('/get', get)
+router.post('/create', tempStorage.single('upload'), uploadImage, create)
+router.put('/edit', edit)
+router.delete('/remove', remove)
 
 module.exports = router

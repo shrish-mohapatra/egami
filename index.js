@@ -2,6 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require("cors");
+const path = require("path");
 
 // Utilities
 const { connectAtlas } = require("./src/utilities/database");
@@ -21,10 +22,20 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(validate)
 
+// Serve react app
+app.use(express.static(path.join(__dirname, "client", "build")));
+app.use(express.static("public"));
+
 app.use('/api/image', imageRouter);
 app.use('/api/user', userRouter);
 
 connectAtlas();
+
+// React-client Route
+app.get("/*", (req, res) => {
+    const filePath = path.join(__dirname, 'client', 'build', 'index.html');
+    res.sendFile(filePath)
+})
 
 app.listen(port, () => {
     console.log("The server is running on port", port);
